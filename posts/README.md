@@ -1,0 +1,5 @@
+# Starting app
+
+```
+go run ...
+```

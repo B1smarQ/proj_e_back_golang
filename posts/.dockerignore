@@ -1,0 +1,22 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+
+# Build
+bin/
+tmp/
+
+# Test
+coverage.out
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Misc
+README.md
+*.log 
