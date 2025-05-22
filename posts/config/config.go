@@ -1,49 +1,56 @@
 package config
 
-type (
-	Config struct {
-		MySql    MySql
-		MongoDB  MongoDB
-		Redis    Redis
-		RabbitMQ RabbitMQ
-		App      App
-	}
-
-	MySql struct {
-		User string `default:"root:B1smarQ._@/project_e"`
-	}
-
-	MongoDB struct {
-		URI string `default:"mongodb://localhost:27017/project_e"`
-	}
-
-	Redis struct {
-		URI string `default:"redis://localhost:6379"`
-	}
-
-	RabbitMQ struct {
-		URI string `default:"amqp://guest:guest@localhost:5672"`
-	}
-
-	App struct {
-		Port     string `default:"8080"`
-		Env      string `default:"development"`
-		Host     string `default:"localhost"`
-		Name     string `default:"project_e"`
-		Version  string `default:"1.0.0"`
-		LogLevel string `default:"debug"`
-	}
+import (
+	"os"
 )
 
-func NewConfig() *Config {
-	cfg := &Config{}
-	cfg.MySql.User = "root:B1smarQ._@/project_e"
-	cfg.MongoDB.URI = "mongodb://localhost:27017/project_e"
-	cfg.Redis.URI = "redis://localhost:6379"
-	cfg.RabbitMQ.URI = "amqp://localhost:5672"
-	cfg.App.Port = "8080"
-	cfg.App.Env = "development"
-	cfg.App.Host = "localhost"
+type MySQLConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Database string
+}
 
-	return cfg
+type AppConfig struct {
+	Port     string
+	Host     string
+	Env      string
+	LogLevel string
+}
+
+type Config struct {
+	MySQL   MySQLConfig
+	App     AppConfig
+	AuthURL string
+}
+
+func NewConfig() *Config {
+	return &Config{
+		MySQL: MySQLConfig{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnv("DB_PORT", "3306"),
+			User:     getEnv("DB_USER", "root"),
+			Password: getEnv("DB_PASSWORD", ""),
+			Database: getEnv("DB_NAME", "posts_db"),
+		},
+		App: AppConfig{
+			Port:     getEnv("SERVER_PORT", "8081"),
+			Host:     getEnv("SERVER_HOST", "localhost"),
+			Env:      getEnv("APP_ENV", "development"),
+			LogLevel: getEnv("LOG_LEVEL", "info"),
+		},
+		AuthURL: getEnv("AUTH_URL", "http://localhost:8080"),
+	}
+}
+
+func LoadConfig() *Config {
+	return NewConfig()
+}
+
+func getEnv(key, defaultValue string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return defaultValue
 }

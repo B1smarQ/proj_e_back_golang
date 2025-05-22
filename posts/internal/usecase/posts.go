@@ -28,6 +28,6 @@ func (u *PostUsecase) DeletePostUsecase(post entity.Post) (entity.Post, error) {
 	return u.PostRepository.DeletePost(post)
 }
 
-func (u *PostUsecase) GetPostUsecase(id int) (entity.ReturnPost, error) {
+func (u *PostUsecase) GetPostUsecase(id string) (entity.ReturnPost, error) {
 	return u.PostRepository.GetPost(id)
 }

@@ -23,11 +23,22 @@ func NewUserUseCase(userRepo domain.UserRepository, jwtKey string) domain.UserUs
 	}
 }
 
-func (uc *userUseCase) Register(email, password string) (*domain.User, error) {
-	// Check if user already exists
+func (uc *userUseCase) Register(username, email, password string) (*domain.User, error) {
+	// Check if user already exists with email
 	existingUser, _ := uc.userRepo.FindByEmail(email)
 	if existingUser != nil {
-		return nil, errors.New("user already exists")
+		return nil, errors.New("user with this email already exists")
+	}
+
+	// Check if username is taken
+	existingUser, _ = uc.userRepo.FindByUsername(username)
+	if existingUser != nil {
+		return nil, errors.New("username is already taken")
+	}
+
+	// Validate username
+	if len(username) < 3 || len(username) > 30 {
+		return nil, errors.New("username must be between 3 and 30 characters")
 	}
 
 	// Hash password
@@ -37,6 +48,7 @@ func (uc *userUseCase) Register(email, password string) (*domain.User, error) {
 	}
 
 	user := &domain.User{
+		Username:  username,
 		Email:     email,
 		Password:  string(hashedPassword),
 		CreatedAt: time.Now(),
@@ -62,9 +74,10 @@ func (uc *userUseCase) Login(email, password string) (string, error) {
 
 	// Create JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"email":   user.Email,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
+		"user_id":  user.ID,
+		"username": user.Username,
+		"email":    user.Email,
+		"exp":      time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
 	})
 
 	tokenString, err := token.SignedString(uc.jwtKey)

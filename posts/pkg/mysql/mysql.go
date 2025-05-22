@@ -48,7 +48,16 @@ func (d *MySqlDriver) Create() error {
 		return fmt.Errorf("configuration is required")
 	}
 
-	db, err := sql.Open("mysql", d.config.MySql.User)
+	// Construct the DSN string
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+		d.config.MySQL.User,
+		d.config.MySQL.Password,
+		d.config.MySQL.Host,
+		d.config.MySQL.Port,
+		d.config.MySQL.Database,
+	)
+
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %v", err)
 	}

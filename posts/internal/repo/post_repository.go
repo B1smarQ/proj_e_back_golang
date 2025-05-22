@@ -28,7 +28,7 @@ func NewPostRepository(db interfaces.DatabaseDriver) *PostRepository {
 
 func (r *PostRepository) GetPosts() ([]entity.ReturnPost, error) {
 	query := `
-		SELECT id, author_id, title, content, creation_time
+		SELECT id, author_id, author_name, title, content, creation_time, thread_id
 		FROM posts
 		ORDER BY creation_time DESC
 	`
@@ -45,9 +45,11 @@ func (r *PostRepository) GetPosts() ([]entity.ReturnPost, error) {
 		err := rows.Scan(
 			&post.ID,
 			&post.AuthorID,
+			&post.AuthorName,
 			&post.Title,
 			&post.Content,
 			&creationTimeStr,
+			&post.ThreadID,
 		)
 		if err != nil {
 			return nil, err
@@ -93,13 +95,21 @@ func (r *PostRepository) DeletePost(post entity.Post) (entity.Post, error) {
 	return post, nil
 }
 
-func (r *PostRepository) GetPost(id int) (entity.ReturnPost, error) {
+func (r *PostRepository) GetPost(id string) (entity.ReturnPost, error) {
 	post := entity.Post{
-		ID: int32(id),
+		ID: id,
 	}
 	post.SetDB(r.db)
 	if err := post.Get(); err != nil {
 		return entity.ReturnPost{}, err
 	}
-	return entity.ReturnPost{ID: post.ID, AuthorID: post.AuthorID, Title: post.Title, Content: post.Content, CreationTime: post.CreationTime}, nil
+	return entity.ReturnPost{
+		ID:           post.ID,
+		AuthorID:     post.AuthorID,
+		AuthorName:   post.AuthorName,
+		Title:        post.Title,
+		Content:      post.Content,
+		CreationTime: post.CreationTime,
+		ThreadID:     post.ThreadID,
+	}, nil
 }

@@ -21,8 +21,15 @@ func TestMySqlDriver_Create(t *testing.T) {
 
 	// Test creating driver with configuration
 	cfg := &config.Config{
-		MySql: config.MySql{
-			User: "test:test@tcp(localhost:3306)/test",
+		MySQL: config.MySQLConfig{
+			Host:     "localhost",
+			Port:     "3306",
+			User:     "test",
+			Password: "test",
+			Database: "test",
+		},
+		App: config.AppConfig{
+			LogLevel: "info",
 		},
 	}
 
@@ -34,8 +41,15 @@ func TestMySqlDriver_Create(t *testing.T) {
 
 func TestMySqlDriver_Methods(t *testing.T) {
 	cfg := &config.Config{
-		MySql: config.MySql{
-			User: "test:test@tcp(localhost:3306)/test",
+		MySQL: config.MySQLConfig{
+			Host:     "localhost",
+			Port:     "3306",
+			User:     "test",
+			Password: "test",
+			Database: "test",
+		},
+		App: config.AppConfig{
+			LogLevel: "info",
 		},
 	}
 

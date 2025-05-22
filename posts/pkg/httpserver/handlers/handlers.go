@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"post_service/internal/entity"
 	"post_service/internal/usecase"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -38,7 +37,7 @@ func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 // @Description Retrieve a list of all posts
 // @Tags        posts
 // @Produce     json
-// @Success     200 {array}  entity.Post
+// @Success     200 {array}  entity.ReturnPost
 // @Failure     500 {object} map[string]string
 // @Router      /posts [get]
 func (h *Handler) GetPosts(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +88,7 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 // @Tags        posts
 // @Accept      json
 // @Produce     json
-// @Param       id   path int true "Post ID"
+// @Param       id   path string true "Post ID"
 // @Param       post body entity.Post true "Post object"
 // @Success     200 {object} entity.Post
 // @Failure     400 {object} map[string]string
@@ -97,8 +96,8 @@ func (h *Handler) CreatePost(w http.ResponseWriter, r *http.Request) {
 // @Router      /posts/{id} [put]
 func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
+	id := vars["id"]
+	if id == "" {
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
 		return
 	}
@@ -109,7 +108,7 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post.ID = int32(id)
+	post.ID = id
 	updatedPost, err := h.useCase.UpdatePostUsecase(post)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -124,20 +123,20 @@ func (h *Handler) UpdatePost(w http.ResponseWriter, r *http.Request) {
 // @Description Delete an existing blog post
 // @Tags        posts
 // @Produce     json
-// @Param       id path int true "Post ID"
+// @Param       id path string true "Post ID"
 // @Success     200 {object} entity.Post
 // @Failure     400 {object} map[string]string
 // @Failure     500 {object} map[string]string
 // @Router      /posts/{id} [delete]
 func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
+	id := vars["id"]
+	if id == "" {
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
 		return
 	}
 
-	post := entity.Post{ID: int32(id)}
+	post := entity.Post{ID: id}
 	deletedPost, err := h.useCase.DeletePostUsecase(post)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -152,15 +151,15 @@ func (h *Handler) DeletePost(w http.ResponseWriter, r *http.Request) {
 // @Description Get a specific blog post by ID
 // @Tags        posts
 // @Produce     json
-// @Param       id path int true "Post ID"
-// @Success     200 {object} entity.Post
+// @Param       id path string true "Post ID"
+// @Success     200 {object} entity.ReturnPost
 // @Failure     400 {object} map[string]string
 // @Failure     500 {object} map[string]string
 // @Router      /posts/{id} [get]
 func (h *Handler) GetPost(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
+	id := vars["id"]
+	if id == "" {
 		http.Error(w, "Invalid post ID", http.StatusBadRequest)
 		return
 	}

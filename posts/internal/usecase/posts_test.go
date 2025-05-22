@@ -11,12 +11,24 @@ type MockPostRepository struct {
 	posts []entity.Post
 }
 
-func (m *MockPostRepository) GetPosts() ([]entity.Post, error) {
-	return m.posts, nil
+func (m *MockPostRepository) GetPosts() ([]entity.ReturnPost, error) {
+	var returnPosts []entity.ReturnPost
+	for _, post := range m.posts {
+		returnPosts = append(returnPosts, entity.ReturnPost{
+			ID:           post.ID,
+			AuthorID:     post.AuthorID,
+			AuthorName:   post.AuthorName,
+			Title:        post.Title,
+			Content:      post.Content,
+			CreationTime: post.CreationTime,
+			ThreadID:     post.ThreadID,
+		})
+	}
+	return returnPosts, nil
 }
 
 func (m *MockPostRepository) CreatePost(post entity.Post) (entity.Post, error) {
-	post.ID = int32(len(m.posts) + 1)
+	post.ID = "post_" + string(len(m.posts)+1)
 	m.posts = append(m.posts, post)
 	return post, nil
 }
@@ -41,29 +53,43 @@ func (m *MockPostRepository) DeletePost(post entity.Post) (entity.Post, error) {
 	return entity.Post{}, entity.ErrPostNotFound
 }
 
-func (m *MockPostRepository) GetPost() (entity.Post, error) {
-	if len(m.posts) > 0 {
-		return m.posts[0], nil
+func (m *MockPostRepository) GetPost(id string) (entity.ReturnPost, error) {
+	for _, post := range m.posts {
+		if post.ID == id {
+			return entity.ReturnPost{
+				ID:           post.ID,
+				AuthorID:     post.AuthorID,
+				AuthorName:   post.AuthorName,
+				Title:        post.Title,
+				Content:      post.Content,
+				CreationTime: post.CreationTime,
+				ThreadID:     post.ThreadID,
+			}, nil
+		}
 	}
-	return entity.Post{}, entity.ErrPostNotFound
+	return entity.ReturnPost{}, entity.ErrPostNotFound
 }
 
 func TestPostUsecase_GetPosts(t *testing.T) {
 	mockRepo := &MockPostRepository{
 		posts: []entity.Post{
 			{
-				ID:           1,
-				AuthorID:     123,
+				ID:           "post_1",
+				AuthorID:     "user1",
+				AuthorName:   "Test User 1",
 				Title:        "Test Post 1",
 				Content:      "Content 1",
 				CreationTime: time.Now(),
+				ThreadID:     "thread1",
 			},
 			{
-				ID:           2,
-				AuthorID:     456,
+				ID:           "post_2",
+				AuthorID:     "user2",
+				AuthorName:   "Test User 2",
 				Title:        "Test Post 2",
 				Content:      "Content 2",
 				CreationTime: time.Now(),
+				ThreadID:     "thread1",
 			},
 		},
 	}
@@ -83,18 +109,20 @@ func TestPostUsecase_CreatePost(t *testing.T) {
 	useCase := NewPostUsecase(mockRepo)
 
 	post := entity.Post{
-		AuthorID:     123,
+		AuthorID:     "user1",
+		AuthorName:   "Test User",
 		Title:        "New Post",
 		Content:      "New Content",
 		CreationTime: time.Now(),
+		ThreadID:     "thread1",
 	}
 
 	createdPost, err := useCase.CreatePostUsecase(post)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if createdPost.ID != 1 {
-		t.Errorf("expected post ID 1, got %d", createdPost.ID)
+	if createdPost.ID != "post_1" {
+		t.Errorf("expected post ID post_1, got %s", createdPost.ID)
 	}
 }
 
@@ -102,11 +130,13 @@ func TestPostUsecase_UpdatePost(t *testing.T) {
 	mockRepo := &MockPostRepository{
 		posts: []entity.Post{
 			{
-				ID:           1,
-				AuthorID:     123,
+				ID:           "post_1",
+				AuthorID:     "user1",
+				AuthorName:   "Test User",
 				Title:        "Original Title",
 				Content:      "Original Content",
 				CreationTime: time.Now(),
+				ThreadID:     "thread1",
 			},
 		},
 	}
@@ -114,11 +144,13 @@ func TestPostUsecase_UpdatePost(t *testing.T) {
 	useCase := NewPostUsecase(mockRepo)
 
 	updatedPost := entity.Post{
-		ID:           1,
-		AuthorID:     123,
+		ID:           "post_1",
+		AuthorID:     "user1",
+		AuthorName:   "Test User",
 		Title:        "Updated Title",
 		Content:      "Updated Content",
 		CreationTime: time.Now(),
+		ThreadID:     "thread1",
 	}
 
 	post, err := useCase.UpdatePostUsecase(updatedPost)
@@ -134,24 +166,26 @@ func TestPostUsecase_DeletePost(t *testing.T) {
 	mockRepo := &MockPostRepository{
 		posts: []entity.Post{
 			{
-				ID:           1,
-				AuthorID:     123,
+				ID:           "post_1",
+				AuthorID:     "user1",
+				AuthorName:   "Test User",
 				Title:        "Test Post",
 				Content:      "Test Content",
 				CreationTime: time.Now(),
+				ThreadID:     "thread1",
 			},
 		},
 	}
 
 	useCase := NewPostUsecase(mockRepo)
 
-	post := entity.Post{ID: 1}
+	post := entity.Post{ID: "post_1"}
 	deletedPost, err := useCase.DeletePostUsecase(post)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if deletedPost.ID != 1 {
-		t.Errorf("expected deleted post ID 1, got %d", deletedPost.ID)
+	if deletedPost.ID != "post_1" {
+		t.Errorf("expected deleted post ID post_1, got %s", deletedPost.ID)
 	}
 }
 
@@ -159,22 +193,24 @@ func TestPostUsecase_GetPost(t *testing.T) {
 	mockRepo := &MockPostRepository{
 		posts: []entity.Post{
 			{
-				ID:           1,
-				AuthorID:     123,
+				ID:           "post_1",
+				AuthorID:     "user1",
+				AuthorName:   "Test User",
 				Title:        "Test Post",
 				Content:      "Test Content",
 				CreationTime: time.Now(),
+				ThreadID:     "thread1",
 			},
 		},
 	}
 
 	useCase := NewPostUsecase(mockRepo)
 
-	post, err := useCase.GetPostUsecase(1)
+	post, err := useCase.GetPostUsecase("post_1")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if post.ID != 1 {
-		t.Errorf("expected post ID 1, got %d", post.ID)
+	if post.ID != "post_1" {
+		t.Errorf("expected post ID post_1, got %s", post.ID)
 	}
 }

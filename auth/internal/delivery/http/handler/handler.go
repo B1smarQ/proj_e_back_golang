@@ -33,6 +33,7 @@ func NewUserHandler(router *mux.Router, useCase domain.UserUseCase) {
 }
 
 type registerRequest struct {
+	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -50,7 +51,7 @@ type response struct {
 
 // Register godoc
 // @Summary Register a new user
-// @Description Register a new user with email and password
+// @Description Register a new user with username, email and password
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -65,7 +66,12 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.userUseCase.Register(req.Email, req.Password)
+	if req.Username == "" {
+		respondWithError(w, http.StatusBadRequest, "Username is required")
+		return
+	}
+
+	user, err := h.userUseCase.Register(req.Username, req.Email, req.Password)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
 		return

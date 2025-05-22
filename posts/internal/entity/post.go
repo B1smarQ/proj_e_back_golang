@@ -14,22 +14,24 @@ type DBExecutor interface {
 }
 
 type Post struct {
-	ID           int32
-	AuthorID     int32
+	ID           string
+	AuthorID     string
+	AuthorName   string
 	Title        string
 	Content      string
 	CreationTime time.Time
-	ThreadID     int32
+	ThreadID     string
 	DB           DBExecutor
 }
 
 type ReturnPost struct {
-	ID           int32
-	AuthorID     int32
+	ID           string
+	AuthorID     string
+	AuthorName   string
 	Title        string
 	Content      string
 	CreationTime time.Time
-	ThreadID     int32
+	ThreadID     string
 }
 
 type PostRepository interface {
@@ -37,7 +39,7 @@ type PostRepository interface {
 	CreatePost(post Post) (Post, error)
 	UpdatePost(post Post) (Post, error)
 	DeletePost(post Post) (Post, error)
-	GetPost(id int) (ReturnPost, error)
+	GetPost(id string) (ReturnPost, error)
 }
 
 var (
@@ -46,9 +48,10 @@ var (
 	ErrPostExists       = errors.New("post already exists")
 	ErrTitleEmpty       = errors.New("title is empty")
 	ErrContentEmpty     = errors.New("content is empty")
-	ErrAuthorIDZero     = errors.New("author id is zero")
+	ErrAuthorIDEmpty    = errors.New("author id is empty")
+	ErrAuthorNameEmpty  = errors.New("author name is empty")
 	ErrCreationTimeZero = errors.New("creation time is zero")
-	ErrThreadIDZero     = errors.New("thread id is zero")
+	ErrThreadIDEmpty    = errors.New("thread id is empty")
 	log                 *logger.Logger
 )
 
@@ -67,11 +70,14 @@ func (p *Post) Validate() error {
 	if p.Content == "" {
 		return ErrContentEmpty
 	}
-	if p.AuthorID == 0 {
-		return ErrAuthorIDZero
+	if p.AuthorID == "" {
+		return ErrAuthorIDEmpty
 	}
-	if p.ThreadID == 0 {
-		return ErrThreadIDZero
+	if p.AuthorName == "" {
+		return ErrAuthorNameEmpty
+	}
+	if p.ThreadID == "" {
+		return ErrThreadIDEmpty
 	}
 	if p.CreationTime.IsZero() {
 		return ErrCreationTimeZero
@@ -92,25 +98,28 @@ func (p *Post) Create() error {
 	}
 
 	query := `
-		INSERT INTO posts (author_id, title, content, creation_time, thread_id)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO posts (id, author_id, author_name, title, content, creation_time, thread_id)
+		VALUES (UUID(), ?, ?, ?, ?, ?, ?)
 	`
-	result, err := p.DB.Exec(query, p.AuthorID, p.Title, p.Content, p.CreationTime, p.ThreadID)
+	_, err := p.DB.Exec(query, p.AuthorID, p.AuthorName, p.Title, p.Content, p.CreationTime, p.ThreadID)
 	if err != nil {
 		return err
 	}
 
-	id, err := result.LastInsertId()
+	// Get the generated UUID
+	row, err := p.DB.QueryRow("SELECT id FROM posts WHERE id = LAST_INSERT_ID()")
 	if err != nil {
 		return err
 	}
+	if err := row.Scan(&p.ID); err != nil {
+		return err
+	}
 
-	p.ID = int32(id)
 	return nil
 }
 
 func (p *Post) Update() error {
-	if p.ID == 0 {
+	if p.ID == "" {
 		return ErrPostNotFound
 	}
 
@@ -132,7 +141,7 @@ func (p *Post) Update() error {
 }
 
 func (p *Post) Delete() error {
-	if p.ID == 0 {
+	if p.ID == "" {
 		return ErrPostNotFound
 	}
 
@@ -146,12 +155,12 @@ func (p *Post) Delete() error {
 }
 
 func (p *Post) Get() error {
-	if p.ID == 0 {
+	if p.ID == "" {
 		return ErrPostNotFound
 	}
 
 	query := `
-		SELECT id, author_id, title, content, creation_time, thread_id
+		SELECT id, author_id, author_name, title, content, creation_time, thread_id
 		FROM posts
 		WHERE id = ?
 	`
@@ -164,6 +173,7 @@ func (p *Post) Get() error {
 	err = row.Scan(
 		&p.ID,
 		&p.AuthorID,
+		&p.AuthorName,
 		&p.Title,
 		&p.Content,
 		&creationTimeStr,
